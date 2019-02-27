@@ -30,16 +30,6 @@
      <attribute name="title">
       <string>实验记录</string>
      </attribute>
-     <widget class="QDateTimeEdit" name="dateTimeEdit">
-      <property name="geometry">
-       <rect>
-        <x>90</x>
-        <y>20</y>
-        <width>194</width>
-        <height>22</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QComboBox" name="comboSize">
       <property name="geometry">
        <rect>
@@ -50,7 +40,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QComboBox" name="comboBox_2">
+     <widget class="QComboBox" name="comboTurn">
       <property name="geometry">
        <rect>
         <x>93</x>
@@ -135,16 +125,6 @@
        <string>/ 国家标准</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_2">
-      <property name="geometry">
-       <rect>
-        <x>558</x>
-        <y>61</y>
-        <width>113</width>
-        <height>21</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_6">
       <property name="geometry">
        <rect>
@@ -158,7 +138,7 @@
        <string>压接点数</string>
       </property>
      </widget>
-     <widget class="QComboBox" name="comboBox_3">
+     <widget class="QComboBox" name="comboNumber">
       <property name="geometry">
        <rect>
         <x>93</x>
@@ -181,7 +161,7 @@
        <string>压痕起始距离</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_3">
+     <widget class="QLineEdit" name="lineFirst">
       <property name="geometry">
        <rect>
         <x>106</x>
@@ -204,7 +184,7 @@
        <string>压痕间距</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="lineEdit_4">
+     <widget class="QLineEdit" name="lineGap">
       <property name="geometry">
        <rect>
         <x>106</x>
@@ -413,38 +393,52 @@
        <enum>Qt::Horizontal</enum>
       </property>
      </widget>
-     <zorder>comboSize</zorder>
-     <zorder>comboBox_2</zorder>
-     <zorder>label</zorder>
-     <zorder>label_2</zorder>
-     <zorder>label_3</zorder>
-     <zorder>label_4</zorder>
-     <zorder>lineEdit</zorder>
-     <zorder>label_5</zorder>
-     <zorder>lineEdit_2</zorder>
-     <zorder>label_6</zorder>
-     <zorder>comboBox_3</zorder>
-     <zorder>label_7</zorder>
-     <zorder>lineEdit_3</zorder>
-     <zorder>label_8</zorder>
-     <zorder>lineEdit_4</zorder>
-     <zorder>label_9</zorder>
-     <zorder>label_10</zorder>
-     <zorder>lineEdit_5</zorder>
-     <zorder>lineEdit_6</zorder>
-     <zorder>label_11</zorder>
-     <zorder>lineEdit_7</zorder>
-     <zorder>label_12</zorder>
-     <zorder>label_13</zorder>
-     <zorder>line</zorder>
-     <zorder>line_2</zorder>
-     <zorder>line_3</zorder>
-     <zorder>line_4</zorder>
-     <zorder>line_5</zorder>
-     <zorder>line_6</zorder>
-     <zorder>line_7</zorder>
-     <zorder>line_8</zorder>
-     <zorder>dateTimeEdit</zorder>
+     <widget class="QTextEdit" name="textEdit">
+      <property name="geometry">
+       <rect>
+        <x>560</x>
+        <y>60</y>
+        <width>81</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>220</y>
+        <width>151</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>基础数据保存</string>
+      </property>
+     </widget>
+     <widget class="QTextEdit" name="timeEdit">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>15</y>
+        <width>151</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="timeButton">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>15</y>
+        <width>93</width>
+        <height>30</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>选择时间</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">

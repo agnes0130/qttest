@@ -1,4 +1,4 @@
-﻿#ifndef MAINWINDOW_H
+#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
@@ -14,16 +14,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-public:
-    void init();
 
-private slots:
-    void on_comboSize_currentTextChanged(const QString &arg1);
-
-    void on_lineEdit_3_editingFinished();
-    
-    void on_lineEdit_4_editingFinished();
-    
 private:
     Ui::MainWindow *ui;
 };

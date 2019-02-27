@@ -1,6 +1,5 @@
-﻿#include "mainwindow.h"
+#include "mainwindow.h"
 #include <QApplication>
-#include "time.h"
 
 int main(int argc, char *argv[])
 {

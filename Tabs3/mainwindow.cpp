@@ -1,6 +1,6 @@
-ï»¿#include "mainwindow.h"
+#include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "QDebug"
+#pragma execution_character_set("utf-8")
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -8,18 +8,18 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     init();
-    setWindowTitle(tr("TabWidget"));//è®¾ç½®æ ‡é¢˜
+    setWindowTitle(tr("TabWidget"));//ÉèÖÃ±êÌâ
 //    QWidget *tabRecord=new QWidget(this);
 //    QWidget *tabAnalyse=new QWidget(this);
 
-    ui->tabWidget->setTabPosition(QTabWidget::North);//è®¾ç½®é€‰é¡¹å¡çš„æ–¹ä½ä¸œå—è¥¿åŒ—ï¼Œé»˜è®¤åœ¨ä¸Šæ–¹
-    ui->tabWidget->setTabShape(QTabWidget::Triangular);//è®¾ç½®é€‰é¡¹å¡çš„å½¢çŠ¶
+    ui->tabWidget->setTabPosition(QTabWidget::North);//ÉèÖÃÑ¡Ïî¿¨µÄ·½Î»¶«ÄÏÎ÷±±£¬Ä¬ÈÏÔÚÉÏ·½
+    ui->tabWidget->setTabShape(QTabWidget::Triangular);//ÉèÖÃÑ¡Ïî¿¨µÄĞÎ×´
 
     ui->tabWidget->setMovable(true);
-    qDebug()<<"ç¬¬ä¸€ä¸ªé€‰é¡¹å¡åç§°ï¼š"<<ui->tabWidget->tabText(0);//è·å–é€‰é¡¹å¡åç§°
-    qDebug()<<"iconSize:"<<ui->tabWidget->iconSize();//è·å–iconçš„å°ºå¯¸
+    qDebug()<<"µÚÒ»¸öÑ¡Ïî¿¨Ãû³Æ£º"<<ui->tabWidget->tabText(0);//»ñÈ¡Ñ¡Ïî¿¨Ãû³Æ
+    qDebug()<<"iconSize:"<<ui->tabWidget->iconSize();//»ñÈ¡iconµÄ³ß´ç
 
-    ui->tabWidget->setTabToolTip(0,tr("Data Record"));//é¼ æ ‡æ‚¬åœå¼¹å‡ºæç¤º
+    ui->tabWidget->setTabToolTip(0,tr("Data Record"));//Êó±êĞüÍ£µ¯³öÌáÊ¾
     ui->tabWidget->setTabToolTip(1,tr("Data Analyse"));
 
 }
@@ -38,13 +38,106 @@ void MainWindow::init()
     ui->comboSize->addItem("240");
     ui->comboSize->addItem("300");
     ui->comboSize->addItem("400");
-    ui->comboBox_2->addItem(QString::fromLocal8Bit("ç”±å†…å‘å¤–"));
-    ui->comboBox_2->addItem(QString::fromLocal8Bit("ç”±å¤–å‘å†…"));
-    ui->comboBox_3->addItem("4");
-    ui->comboBox_3->addItem("6");
+    ui->comboTurn->addItem(tr("ÓÉÄÚÏòÍâ"));
+    ui->comboTurn->addItem(tr("ÓÉÍâÏòÄÚ"));
+    ui->comboNumber->addItem("4");
+    ui->comboNumber->addItem("6");
 }
 
-void MainWindow::on_comboSize_currentTextChanged(const QString &arg1)
+
+
+void MainWindow::on_lineEdit_3_editingFinished()
 {
 
+}
+
+void MainWindow::on_lineEdit_4_editingFinished()
+{
+
+}
+
+void MainWindow::on_comboSize_currentIndexChanged(int index)
+{
+    switch (index)
+    {
+    case 0:
+        ui->textEdit->setPlainText("3000N");
+        break;
+
+    case 1:
+        ui->textEdit->setPlainText("4200N");
+        break;
+
+    case 2:
+        ui->textEdit->setPlainText("7200N");
+        break;
+
+    case 3:
+        ui->textEdit->setPlainText("9000N");
+        break;
+
+    case 4:
+        ui->textEdit->setPlainText("14400N");
+        break;
+
+    case 5:
+        ui->textEdit->setPlainText("18000N");
+        break;
+
+    case 6:
+        ui->textEdit->setPlainText("24000N");
+        break;
+    }
+}
+
+void MainWindow::on_timeButton_clicked()
+{
+    QDateTime current_date_time = QDateTime::currentDateTime();
+    QString current_date = current_date_time.toString("yyyy.MM.dd hh:mm");
+    ui->timeEdit->setPlainText(current_date);
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    base_information_save();
+
+}
+
+void MainWindow::base_information_save()
+{
+    QString time_str = ui->timeEdit->toPlainText();
+    QString size_str = ui->comboSize->currentText();
+    QString first_str = ui->lineFirst->text();
+    QString gap_str = ui->lineGap->text();
+    int turn_index = ui->comboTurn->currentIndex();
+    int number_index = ui->comboNumber->currentIndex();
+    QString path = QFileDialog::getSaveFileName(this,
+                                                tr("Open File"),
+                                                ".",
+                                                tr("Text Files(*.txt)"));
+    if(!path.isEmpty())
+    {
+        QFile file(path);
+        if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QMessageBox::warning(this,
+                                 tr("Write File"),
+                                 tr("Cannot open file:\n%1").arg(path));
+            return;
+        }
+        QTextStream out(&file);
+        out << time_str << endl;
+        out << tr("µçÀÂ³ß´ç£º") << size_str << " mm2" << endl;
+        if (turn_index == 0)
+            out << tr("Ñ¹½ÓË³Ğò£ºÓÉÄÚÏòÍâ") << endl;
+        else if (turn_index == 1)
+            out << tr("Ñ¹½ÓË³Ğò£ºÓÉÍâÏòÄÚ") << endl;
+        if (number_index == 0)
+            out << tr("Ñ¹½ÓµãÊı£º4") << endl;
+        else if (number_index == 1)
+            out << tr("Ñ¹½ÓµãÊı£º6") << endl;
+        out << tr("Ñ¹ºÛÆğÊ¼¾àÀë£º") << first_str << " mm" << endl;
+        out << tr("Ñ¹ºÛ¼ä¾à£º") << gap_str << " mm" << endl;
+        file.close();
+    }
 }
