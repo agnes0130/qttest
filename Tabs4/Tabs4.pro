@@ -26,10 +26,14 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    datarecordtab.cpp \
+    dataanalysetab.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    datarecordtab.h \
+    dataanalysetab.h
 
 FORMS += \
         mainwindow.ui
