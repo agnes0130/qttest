@@ -3,7 +3,7 @@
 # Project created by QtCreator 2019-02-26T14:20:56
 #
 #-------------------------------------------------
-
+QT       += serialport
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
@@ -26,10 +26,12 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    qcustomplot.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    qcustomplot.h
 
 FORMS += \
         mainwindow.ui

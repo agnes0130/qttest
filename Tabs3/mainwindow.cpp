@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     init();
-    setWindowTitle(tr("TabWidget"));//设置标题
+    setWindowTitle(tr("电缆压接实验记录与分析软件"));//设置标题
 //    QWidget *tabRecord=new QWidget(this);
 //    QWidget *tabAnalyse=new QWidget(this);
 
@@ -22,6 +22,32 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->setTabToolTip(0,tr("Data Record"));//鼠标悬停弹出提示
     ui->tabWidget->setTabToolTip(1,tr("Data Analyse"));
 
+    plot=new QCustomPlot(ui->tab);
+    plot->setGeometry(10,290,400,350);
+    plot->xAxis->setLabel("time/s");
+    plot->yAxis->setLabel("Press/N");
+    plot->addGraph();
+
+    plot2=new QCustomPlot(ui->tab);
+    plot2->setGeometry(450,290,400,350);
+    plot2->xAxis->setLabel("time/s");
+    plot2->yAxis->setLabel("Position/mm");
+    plot2->addGraph();
+
+    plotAll = new QCustomPlot(ui->tab_2);
+    plotAll->setGeometry(100,130,600,500);
+    plotAll->xAxis->setLabel("time/s");
+    plotAll->yAxis->setLabel("Press/N");
+    plotAll->yAxis2->setLabel("Position/mm");
+    plotAll->yAxis2->setVisible(true);
+    plotAll->addGraph();
+
+    serialPort= new QSerialPort(this);//串口部分
+    foreach(const QSerialPortInfo &SerialPortInfo, QSerialPortInfo::availablePorts())
+    {
+        ui->serialPort->addItem(SerialPortInfo.portName());
+    }
+    connect(serialPort,SIGNAL(readyRead()),this,SLOT(readCom()));
 }
 
 MainWindow::~MainWindow()
@@ -31,13 +57,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
-    ui->comboSize->addItem("50");
-    ui->comboSize->addItem("70");
-    ui->comboSize->addItem("120");
-    ui->comboSize->addItem("150");
-    ui->comboSize->addItem("240");
-    ui->comboSize->addItem("300");
-    ui->comboSize->addItem("400");
+    ui->comboSize->addItem("50 mm2");
+    ui->comboSize->addItem("70 mm2");
+    ui->comboSize->addItem("120 mm2");
+    ui->comboSize->addItem("150 mm2");
+    ui->comboSize->addItem("240 mm2");
+    ui->comboSize->addItem("300 mm2");
+    ui->comboSize->addItem("400 mm2");
     ui->comboTurn->addItem(tr("由内向外"));
     ui->comboTurn->addItem(tr("由外向内"));
     ui->comboNumber->addItem("4");
@@ -45,11 +71,6 @@ void MainWindow::init()
 }
 
 
-
-void MainWindow::on_lineEdit_3_editingFinished()
-{
-
-}
 
 void MainWindow::on_lineEdit_4_editingFinished()
 {
@@ -127,6 +148,50 @@ void MainWindow::base_information_save()
         }
         QTextStream out(&file);
         out << time_str << endl;
+        out << tr("电缆尺寸：") << size_str << endl;
+        if (turn_index == 0)
+            out << tr("压接顺序：由内向外") << endl;
+        else if (turn_index == 1)
+            out << tr("压接顺序：由外向内") << endl;
+        if (number_index == 0)
+            out << tr("压接点数：4") << endl;
+        else if (number_index == 1)
+            out << tr("压接点数：6") << endl;
+        out << tr("压痕起始距离：") << first_str << " mm" << endl;
+        out << tr("压痕间距：") << gap_str << " mm" << endl;
+        out << "****************************" << endl;
+        out << tr("压力实验数据       位移实验数据") <<endl;
+        out << tr("时间/s  压力/N     时间/s  位移/mm") <<endl;
+        file.close();
+    }
+}
+
+void MainWindow::on_pressButton_clicked()
+{
+    QString time_str = ui->timeEdit->toPlainText();
+    QString size_str = ui->comboSize->currentText();
+    QString first_str = ui->lineFirst->text();
+    QString gap_str = ui->lineGap->text();
+    QString standard_str = ui->textEdit->toPlainText();
+    int turn_index = ui->comboTurn->currentIndex();
+    int number_index = ui->comboNumber->currentIndex();
+    QString path = QFileDialog::getSaveFileName(this,
+                                                tr("Open File"),
+                                                ".",
+                                                tr("Text Files(*.txt)"));
+    if(!path.isEmpty())
+    {
+        QFile file(path);
+        if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QMessageBox::warning(this,
+                                 tr("Write File"),
+                                 tr("Cannot open file:\n%1").arg(path));
+            return;
+        }
+        QTextStream out(&file);
+        out << tr("*****抗拉强度测试结果记录单*****") << endl;
+        out << time_str << endl;
         out << tr("电缆尺寸：") << size_str << " mm2" << endl;
         if (turn_index == 0)
             out << tr("压接顺序：由内向外") << endl;
@@ -138,6 +203,160 @@ void MainWindow::base_information_save()
             out << tr("压接点数：6") << endl;
         out << tr("压痕起始距离：") << first_str << " mm" << endl;
         out << tr("压痕间距：") << gap_str << " mm" << endl;
+        out << "*********************" << endl;
+        out << tr("国家标准") << standard_str << endl;
+        out << tr("压力/N   抗拉强度/N") << endl;
+        QVector<QString>::iterator iter;
+        QVector<QString>::iterator iter2;
+        iter2=pullData.begin();
+        for (iter=pullPress.begin();iter!=pullPress.end();iter++)
+        {
+            out <<  *iter << "    ";
+            out << *iter2 << "\n";
+            iter2++;
+        }
+        file.close();
+    }
+}
+
+void MainWindow::on_pullConfirm_clicked()
+{
+    QString pull_press = ui->linePress->text();
+    QString pull_data = ui->linePull->text();
+    pullPress.append(pull_press);
+    pullData.append(pull_data);
+}
+
+void MainWindow::on_resistConfirm_clicked()
+{
+    QString resist_press = ui->linePressResist->text();
+    QString resist_data = ui->lineResist->text();
+    resistPress.append(resist_press);
+    resistData.append(resist_data);
+}
+
+void MainWindow::on_resistButton_clicked()
+{
+    QString time_str = ui->timeEdit->toPlainText();
+    QString size_str = ui->comboSize->currentText();
+    QString first_str = ui->lineFirst->text();
+    QString gap_str = ui->lineGap->text();
+    int turn_index = ui->comboTurn->currentIndex();
+    int number_index = ui->comboNumber->currentIndex();
+    QString path = QFileDialog::getSaveFileName(this,
+                                                tr("Open File"),
+                                                ".",
+                                                tr("Text Files(*.txt)"));
+    if(!path.isEmpty())
+    {
+        QFile file(path);
+        if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QMessageBox::warning(this,
+                                 tr("Write File"),
+                                 tr("Cannot open file:\n%1").arg(path));
+            return;
+        }
+        QTextStream out(&file);
+        out << tr("*****接触电阻测试结果记录单*****") << endl;
+        out << time_str << endl;
+        out << tr("电缆尺寸：") << size_str << " mm2" << endl;
+        if (turn_index == 0)
+            out << tr("压接顺序：由内向外") << endl;
+        else if (turn_index == 1)
+            out << tr("压接顺序：由外向内") << endl;
+        if (number_index == 0)
+            out << tr("压接点数：4") << endl;
+        else if (number_index == 1)
+            out << tr("压接点数：6") << endl;
+        out << tr("压痕起始距离：") << first_str << " mm" << endl;
+        out << tr("压痕间距：") << gap_str << " mm" << endl;
+        out << "*********************" << endl;
+        out << tr("压力/N   接触电阻/Ω") << endl;
+        QVector<QString>::iterator iter;
+        QVector<QString>::iterator iter2;
+        iter2=resistData.begin();
+        for (iter=resistPress.begin();iter!=resistPress.end();iter++)
+        {
+            out <<  *iter << "    ";
+            out << *iter2 << "\n";
+            iter2++;
+        }
+        file.close();
+    }
+}
+
+void MainWindow::on_serialOpen_clicked()
+{
+    serialPort->setPortName(ui->serialPort->currentText());
+    serialPort->setBaudRate(QSerialPort::Baud115200);
+    serialPort->setDataBits(QSerialPort::Data8);
+    serialPort->setStopBits(QSerialPort::OneStop);
+    serialPort->setParity(QSerialPort::NoParity);
+    serialPort->setFlowControl(QSerialPort::NoFlowControl);
+    if(serialPort->open(QIODevice::ReadWrite))
+    {
+         ui->serialOpen->setDisabled(true);
+         ui->serialClose->setEnabled(true);
+         ui->serialPort->setDisabled(true);
+         ui->serialShow->setPlainText(tr("串口已打开"));
+         qDebug()<<"串口打开成功！";
+    }
+    else if(!serialPort->open(QIODevice::ReadWrite))
+    {
+        ui->serialShow->setPlainText(tr("串口打开失败"));
+        QMessageBox::information(this,"abc","串口打开失败！");
+    }
+}
+
+void MainWindow::on_serialClose_clicked()
+{
+    if(serialPort->isOpen())
+    {
+        serialPort->close();
+        ui->serialOpen->setEnabled(true);
+        ui->serialClose->setDisabled(true);
+        ui->serialPort->setEnabled(true);
+
+        ui->serialShow->setPlainText(tr("串口已关闭"));
+        qDebug()<<"串口已关闭！";
+    }
+}
+
+void MainWindow::on_pressFile_clicked()
+{
+    QFile file;
+    QString f = QFileDialog::getOpenFileName(this, QString("选择文件"), QString("/"),QString("TEXT(*.txt)"));
+    ui->pressDir->setPlainText(f);
+    //QString fileName =
+    file.setFileName(f);
+    if(file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QByteArray t ;
+        while(!file.atEnd())
+        {
+            t += file.readLine();
+        }
+        //ui->text_r->setText(QString(t));//存储内容
+        file.close();
+    }
+}
+
+void MainWindow::on_positionFile_clicked()
+{
+    QFile file;
+    QString f = QFileDialog::getOpenFileName(this, QString("选择文件"), QString("/"),QString("TEXT(*.txt)"));
+    ui->positionDir->setPlainText(f);
+    //QString fileName =
+    file.setFileName(f);
+    if(file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QByteArray t ;
+        while(!file.atEnd())
+        {
+            t += file.readLine();
+        }
+        //ui->text_r->setText(QString(t));//存储内容
         file.close();
     }
 }

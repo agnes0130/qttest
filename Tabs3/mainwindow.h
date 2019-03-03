@@ -10,6 +10,10 @@
 #include <QFile>
 #include <QString>
 #include <qfiledialog.h>
+#include <QVector>
+#include "qcustomplot.h"
+#include<QtSerialPort/QSerialPort>
+#include<QtSerialPort/QSerialPortInfo>
 
 namespace Ui {
 class MainWindow;
@@ -24,10 +28,16 @@ public:
     ~MainWindow();
 public:
     void init();
+    QCustomPlot *plot;
+    QCustomPlot *plot2;
+    QCustomPlot *plotAll;
+    QSerialPort *serialPort;
+    QVector<QString> pullPress;
+    QVector<QString> pullData;
+    QVector<QString> resistPress;
+    QVector<QString> resistData;
 
 private slots:
-    void on_lineEdit_3_editingFinished();
-
     void on_lineEdit_4_editingFinished();
 
     void on_comboSize_currentIndexChanged(int index);
@@ -36,6 +46,22 @@ private slots:
 
     void on_timeButton_clicked();
     void base_information_save();
+
+    void on_pressButton_clicked();
+
+    void on_pullConfirm_clicked();
+
+    void on_resistConfirm_clicked();
+
+    void on_resistButton_clicked();
+
+    void on_serialOpen_clicked();
+
+    void on_serialClose_clicked();
+
+    void on_pressFile_clicked();
+
+    void on_positionFile_clicked();
 
 private:
     Ui::MainWindow *ui;
