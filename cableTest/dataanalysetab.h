@@ -1,17 +1,26 @@
 #ifndef DATAANALYSETAB_H
 #define DATAANALYSETAB_H
 
-#include <QWidget>
-
+#include<QTabWidget>
+#include<QWidget>
+#include<QHBoxLayout>
+#include<QVBoxLayout>
+#include<QGridLayout>
+#include<QGroupBox>
+#include<QLabel>
+#include<QTextLine>
+#include<QMessageBox>
 class dataAnalyseTab : public QWidget
 {
     Q_OBJECT
 public:
-    explicit dataAnalyseTab(QWidget *parent = nullptr);
+    explicit dataAnalyseTab(QWidget *parent = 0);
+
+    void init_dataAnalyseTab();
 
 signals:
 
-public slots:
+private slots:
 };
 
 #endif // DATAANALYSETAB_H
