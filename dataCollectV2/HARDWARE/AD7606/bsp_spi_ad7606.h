@@ -90,6 +90,8 @@
 
 #define AD_MISO_IN					PCin(9)
 
+#define CRC_INIT						0x77
+
 /* AD数据采集缓冲区 */
 typedef struct
 {
@@ -108,6 +110,8 @@ void ad7606_StartRecord(uint32_t _ulFreq);
 void ad7606_StopRecord(void);
 uint8_t GetAdcFormFifo(uint16_t *_usReadAdc);
 
+/*CRC-8*/
+uint8_t crc8_calcluate(uint8_t *pdata, int len, uint8_t init_rc);
 
 extern FIFO_T  g_tAD;
 

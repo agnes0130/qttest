@@ -411,3 +411,29 @@ void MainWindow::dataPlot(int hereData)
     plot->rescaleAxes(true);
     plot->replot();
 }
+
+unsigned char MainWindow::crc8_calcluate(unsigned char *pdata, int len, unsigned char init_crc)
+{
+    unsigned char byte = 0;
+    while(len--)
+    {
+        byte = init_crc ^ (*pdata);
+        init_crc = crc8_table[byte];
+        pdata ++;
+    }
+    return init_crc;
+}
+
+BOOL MainWindow::crc8_verify(unsigned char *pdata, int len, unsigned char init_crc)
+{
+    unsigned char expected_crc  = 0;
+    expected_crc = crc8_calcluate(pdata, len - 1, init_crc);
+    if (expected_crc != pdata[len - 1])
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
