@@ -265,6 +265,32 @@ void dataRecordTab::layout_dataRecordTab()
     vBoxLayout->addLayout(gridLayout5);
     this->setLayout(vBoxLayout);
 }
+
+unsigned char dataRecordTab::crc8_calcluate(unsigned char *pdata, int len, unsigned char init_crc)
+{
+    unsigned char byte = 0;
+    while(len--)
+    {
+        byte = init_crc ^ (*pdata);
+        init_crc = crc8_table[byte];
+        pdata ++;
+    }
+    return init_crc;
+}
+
+BOOL dataRecordTab::crc8_verify(unsigned char *pdata, int len, unsigned char init_crc)
+{
+    unsigned char expected_crc  = 0;
+    expected_crc = crc8_calcluate(pdata, len - 1, init_crc);
+    if (expected_crc != pdata[len - 1])
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
 //槽函数定义
 void dataRecordTab::size_comboBoxChangedSlotFunc(int index)
 {
