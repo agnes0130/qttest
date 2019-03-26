@@ -136,12 +136,17 @@ void MainWindow::base_information_save()
         out << tr("时间/s  压力/N     时间/s  位移/mm") <<endl;
         QVector<double>::iterator iter;
         QVector<int>::iterator iter2;
+        QVector<double>::iterator iter3;
         iter2=pressSave.begin();
+        iter3=disSave.begin();
         for (iter=timeSave.begin();iter!=timeSave.end();iter++)
         {
             out <<  *iter << "\t";
-            out << *iter2 << "\n";
+            out << *iter2 << "\t";
+            out <<  *iter << "\t";
+            out << *iter3 << "\n";
             iter2++;
+            iter3++;
         }
         file.close();
     }
@@ -340,9 +345,7 @@ void MainWindow::on_positionFile_clicked()
 void MainWindow::on_startButton_clicked()
 {
     pressData.clear();
-
 }
-
 void MainWindow::readCom()
 {
     byteArray.append(serialPort->readAll());
@@ -380,12 +383,37 @@ void MainWindow::readCom()
                     //pressData.append(hereData);
                 }
             }
+            if(byteArray[index]=='B')
+            {
+                if(byteArray[index + 1] !='B'){
+                    char rxDataArray[5];
+                    index++;
+                    for(int i =0; i < 5; i++){
+                        //rxDataArray[i]=byteArray[index];
+                        rxDataArray[i]=byteArray[index]-'0';
+                        //qDebug()<<rxDataArray[i];
+                        index++;
+                    }
+                    int hereData;
+                    if(rxDataArray[0] == -3){
+                        hereData=-(1000*rxDataArray[1] + 100*rxDataArray[2] + 10*rxDataArray[3] + rxDataArray[4]);
+                    }
+                    else{
+                        hereData = 10000*rxDataArray[0] + 1000*rxDataArray[1] + 100*rxDataArray[2] + 10*rxDataArray[3] + rxDataArray[4];
+                    }
+        //            char hereData='0'+17;
+                    double hereData1;
+                    hereData1 = -hereData*0.006 + 65;
+                    qDebug() << hereData1 << endl;
+                    dataPlot2(hereData1);
+                    //pressData.append(hereData);
+                }
+            }
     }
     }
     //qDebug()<<byteArray<<endl;
     byteArray.clear();
 }
-
 void MainWindow::dataPlot(int hereData)
 {
     if(intoPlotFuncNum<plotDataNum)
@@ -406,7 +434,6 @@ void MainWindow::dataPlot(int hereData)
         timeSave.append(intoPlotFuncNum*0.1);
     }
     intoPlotFuncNum++;
-
     plot->graph(0)->setData(timeDataVec,posDataVec1);
     plot->rescaleAxes(true);
     plot->replot();
@@ -436,4 +463,21 @@ BOOL MainWindow::crc8_verify(unsigned char *pdata, int len, unsigned char init_c
     {
         return TRUE;
     }
+
+void MainWindow::dataPlot2(double hereData)
+{
+    if(intoPlotFuncNum<plotDataNum)
+    {
+        disDataVec.append(hereData);
+        disSave.append(hereData);
+    }
+    else
+    {
+        disDataVec.removeFirst();
+        disDataVec.append(hereData);
+        disSave.append(hereData);
+    }
+    plot2->graph(0)->setData(timeDataVec,disDataVec);
+    plot2->rescaleAxes(true);
+    plot2->replot();
 }

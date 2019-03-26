@@ -38,12 +38,15 @@ public:
     QVector<QString> resistPress;
     QVector<QString> resistData;
     void dataPlot(int);
+    void dataPlot2(double);
     int plotDataNum=100;
     int intoPlotFuncNum=0;
     int startFlag = 0;
     QVector<double> posDataVec1;
+    QVector<double> disDataVec;
     QVector<double> timeDataVec;
     QVector<int> pressSave;
+    QVector<double> disSave;
     QVector<double> timeSave;
     const unsigned char crc8_table[256] =
     {
@@ -81,7 +84,6 @@ private slots:
     void on_positionFile_clicked();
     void on_startButton_clicked();
     void readCom();
-
 private:
     Ui::MainWindow *ui;
 };
