@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     init();
+    am_obj = new am(this);
     setWindowTitle(tr("电缆压接实验记录与分析软件"));//设置标题
     ui->tabWidget->setTabPosition(QTabWidget::North);//设置选项卡的方位东南西北，默认在上方
     ui->tabWidget->setTabShape(QTabWidget::Triangular);//设置选项卡的形状
@@ -348,6 +349,7 @@ void MainWindow::on_startButton_clicked()
 }
 void MainWindow::readCom()
 {
+#ifndef AM_RE_TX_ENABLE
     byteArray.append(serialPort->readAll());
 
     int index = 0;
@@ -413,6 +415,35 @@ void MainWindow::readCom()
     }
     //qDebug()<<byteArray<<endl;
     byteArray.clear();
+#else
+    unsigned char pdata[PACKET_SIZE + 4];
+    unsigned char pdata_out[ACK_DATA_SIZE + 2];
+    int data_is_ok;
+    int is_re_tx_flag = 0;
+    byteArray.append(serialPort->readAll());
+    int i = 0;
+    int arraySize = byteArray.size();
+    if ((byteArray[i] == 0xFF) && ())
+    {
+        //TODO read the data packet from stm32 to fill pdata and send to am
+    }
+    am_obj->am_check_data(&pdata[0], &pdata_out[0], &data_is_ok, &is_re_tx_flag);
+    //TODO send pdata_out to stm32
+
+    if (data_is_ok == CRC_OK)
+    {
+        //TODO save data
+        if (is_re_tx_flag == 0)
+        {
+            //PLOT
+        }
+    }
+    else
+    {
+        //do nothing
+    }
+
+#endif
 }
 void MainWindow::dataPlot(int hereData)
 {
@@ -438,31 +469,6 @@ void MainWindow::dataPlot(int hereData)
     plot->rescaleAxes(true);
     plot->replot();
 }
-
-unsigned char MainWindow::crc8_calcluate(unsigned char *pdata, int len, unsigned char init_crc)
-{
-    unsigned char byte = 0;
-    while(len--)
-    {
-        byte = init_crc ^ (*pdata);
-        init_crc = crc8_table[byte];
-        pdata ++;
-    }
-    return init_crc;
-}
-
-BOOL MainWindow::crc8_verify(unsigned char *pdata, int len, unsigned char init_crc)
-{
-    unsigned char expected_crc  = 0;
-    expected_crc = crc8_calcluate(pdata, len - 1, init_crc);
-    if (expected_crc != pdata[len - 1])
-    {
-        return FALSE;
-    }
-    else
-    {
-        return TRUE;
-    }
 
 void MainWindow::dataPlot2(double hereData)
 {
