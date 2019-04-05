@@ -5,9 +5,9 @@ am::am(QObject *parent) : QObject(parent)
 
 }
 
-unsigned char am::crc8_calcluate(unsigned char *pdata, int len, unsigned char init_crc)
+uint8_t am::crc8_calcluate(uint8_t *pdata, int len, uint8_t init_crc)
 {
-    unsigned char byte = 0;
+    uint8_t byte = 0;
     while(len--)
     {
         byte = init_crc ^ (*pdata);
@@ -17,9 +17,9 @@ unsigned char am::crc8_calcluate(unsigned char *pdata, int len, unsigned char in
     return init_crc;
 }
 
-bool am::crc8_verify(unsigned char *pdata, int len, unsigned char init_crc)
+bool am::crc8_verify(uint8_t *pdata, int len, uint8_t init_crc)
 {
-    unsigned char expected_crc  = 0;
+    uint8_t expected_crc  = 0;
     expected_crc = crc8_calcluate(pdata, len - 1, init_crc);
     if (expected_crc != pdata[len - 1])
     {
@@ -31,9 +31,16 @@ bool am::crc8_verify(unsigned char *pdata, int len, unsigned char init_crc)
     }
 }
 
-void am::am_check_data(unsigned char* pdata, unsigned char* pdata_out, int* data_ok, int* is_re_tx_flag)
+void am::rx_window_init(uint8_t packet_size, uint16_t sampling_rate)
 {
-    unsigned char ch_idx, sn, crc_8;
+    g_win_size = ( MAX_DELAY/(packet_size /(2 * sampling_rate))) << 1;//接收窗比发送窗宽一倍
+    rx_win_info_ch0 = new RX_WINDOW_T[g_win_size];
+    rx_win_info_ch1 = new RX_WINDOW_T[g_win_size];
+}
+
+void am::am_check_data(uint8_t* pdata, uint8_t* pdata_out, int* data_ok, int* is_re_tx_flag)
+{
+    uint8_t ch_idx, sn, crc_8;
     bool data_is_ok = CRC_FAIL;
 
     data_is_ok = crc8_verify(pdata, PACKET_SIZE + 4, CRC_INIT);
@@ -64,5 +71,267 @@ void am::am_check_data(unsigned char* pdata, unsigned char* pdata_out, int* data
         crc_8 = crc8_calcluate(&pdata_out[2], 3, CRC_INIT);
         pdata_out[5] = crc_8;
         *data_ok = CRC_FAIL;
+    }
+}
+
+void am::update_rx_window_and_save_data(uint8_t* pdata)
+{
+    uint8_t ch_idx, sn, i, j, k;
+
+    ch_idx = pdata[1];
+    sn = (pdata[2] >> 1) & 0x7F;
+    if (ch_idx == CH_0)
+    {
+        if ((sn > head_sn_ch0) && (sn - head_sn_ch0 < g_win_size))/*说明是新传的数据，移动接收窗*/
+        {
+            for(i = 1; i < g_win_size; i++)
+            {
+                if (rx_win_info_ch0[g_win_size - i].sn != (sn - i))/*说明新传的sn与上次传的sn(即head_sn_ch0)之间有漏包*/
+                {
+                    if (rx_win_info_ch0[0].recv_flag == CRC_OK)
+                    {
+                        //rx_win_info_ch0[0].data_buf need save to txt  后面添加链表来管理要存txt的数据
+                    }
+                    for (j = 0; j < g_win_size - i; j++)
+                    {
+                        rx_win_info_ch0[j].sn = rx_win_info_ch0[j + 1].sn;
+                        rx_win_info_ch0[j].recv_flag = rx_win_info_ch0[j + 1].recv_flag;
+                        for (k = 0; k < PACKET_SIZE / 2; k++)
+                        {
+                            rx_win_info_ch0[j].data_buf[k] = rx_win_info_ch0[j + 1].data_buf[k];
+                        }
+                    }
+                    /*将漏的数据包填0，在接收窗先占上位置*/
+                    rx_win_info_ch0[g_win_size - i].sn = head_sn_ch0 + i;
+                    rx_win_info_ch0[g_win_size - i].recv_flag = CRC_FAIL;
+                    for (j = 0; j < PACKET_SIZE / 2; j++)
+                    {
+                        rx_win_info_ch0[g_win_size - i].data_buf[j] = 0;
+                    }
+                }
+                else
+                {
+                    if (rx_win_info_ch0[0].recv_flag == CRC_OK)
+                    {
+                        //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                    }
+                    for (j = 0; j < g_win_size - 1; j++)
+                    {
+                        rx_win_info_ch0[j].sn = rx_win_info_ch0[j + 1].sn;
+                        rx_win_info_ch0[j].recv_flag = rx_win_info_ch0[j + 1].recv_flag;
+                        for (k = 0; k < PACKET_SIZE / 2; k++)
+                        {
+                            rx_win_info_ch0[j].data_buf[k] = rx_win_info_ch0[j + 1].data_buf[k];
+                        }
+                    }
+                    /*将新传的数据加到窗头*/
+                    head_sn_ch0 = sn;
+                    rx_win_info_ch0[g_win_size - 1].sn = sn;
+                    rx_win_info_ch0[g_win_size - 1].recv_flag = CRC_OK;
+                    for (j = 0; j < PACKET_SIZE / 2; j++)
+                    {
+                        rx_win_info_ch0[g_win_size - 1].data_buf[j] = (pdata[3 + j] & 0xFF) | ((pdata[4 + j] << 8) & (0xFF00));
+                    }
+                    break;
+                }
+            }
+        }
+        else if (((sn - head_sn_ch0) >= -127) &&((sn - head_sn_ch0) <= -127 + g_win_size))/*说明也是新传的数据，只是sn循环了*/
+        {
+            for(i = 1; i < g_win_size; i++)
+            {
+                if (rx_win_info_ch0[g_win_size - i].sn != (sn - 1 + 128) % 128)/*说明新传的sn与上次传的sn(即head_sn_ch0)之间有漏包*/
+                {
+                    if (rx_win_info_ch0[0].recv_flag == CRC_OK)
+                    {
+                        //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                    }
+                    for (j = 0; j < g_win_size - i; j++)
+                    {
+                        rx_win_info_ch0[j].sn = rx_win_info_ch0[j + 1].sn;
+                        rx_win_info_ch0[j].recv_flag = rx_win_info_ch0[j + 1].recv_flag;
+                        for (k = 0; k < PACKET_SIZE / 2; k++)
+                        {
+                            rx_win_info_ch0[j].data_buf[k] = rx_win_info_ch0[j + 1].data_buf[k];
+                        }
+                    }
+                    /*将漏的数据包填0，在接收窗先占上位置*/
+                    rx_win_info_ch0[g_win_size - i].sn = (head_sn_ch0 + i) % 128;
+                    rx_win_info_ch0[g_win_size - i].recv_flag = CRC_FAIL;
+                    for (j = 0; j < PACKET_SIZE / 2; j++)
+                    {
+                        rx_win_info_ch0[g_win_size - i].data_buf[j] = 0;
+                    }
+                }
+                else
+                {
+                    if (rx_win_info_ch0[0].recv_flag == CRC_OK)
+                    {
+                        //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                    }
+                    for (j = 0; j < g_win_size - 1; j++)
+                    {
+                        rx_win_info_ch0[j].sn = rx_win_info_ch0[j + 1].sn;
+                        rx_win_info_ch0[j].recv_flag = rx_win_info_ch0[j + 1].recv_flag;
+                        for (k = 0; k < PACKET_SIZE / 2; k++)
+                        {
+                            rx_win_info_ch0[j].data_buf[k] = rx_win_info_ch0[j + 1].data_buf[k];
+                        }
+                    }
+                    /*将新传的数据加到窗头*/
+                    head_sn_ch0 = sn;
+                    rx_win_info_ch0[g_win_size - 1].sn = sn;
+                    rx_win_info_ch0[g_win_size - 1].recv_flag = CRC_OK;
+                    for (j = 0; j < PACKET_SIZE / 2; j++)
+                    {
+                        rx_win_info_ch0[g_win_size - 1].data_buf[j] = (pdata[3 + j] & 0xFF) | ((pdata[4 + j] << 8) & (0xFF00));
+                    }
+                    break;
+                }
+            }
+        }
+        else/*说明是重传的数据，找到窗中的对应的sn，填写数据*/
+        {
+            for(i = g_win_size - 1; i >= 0; i--)
+            {
+                if (rx_win_info_ch0[i].sn == sn)
+                {
+                    for (j = 0; j < PACKET_SIZE / 2; j++)
+                    {
+                        rx_win_info_ch0[i].data_buf[j] = (pdata[3 + j] & 0xFF) | ((pdata[4 + j] << 8) & (0xFF00));
+                    }
+                    rx_win_info_ch0[i].recv_flag = CRC_OK;
+                }
+                break;
+            }
+        }
+    }
+    else if(ch_idx == CH_1)
+    {
+        {
+            if ((sn > head_sn_ch1) && (sn - head_sn_ch1 < g_win_size))/*说明是新传的数据，移动接收窗*/
+            {
+                for(i = 1; i < g_win_size; i++)
+                {
+                    if (rx_win_info_ch1[g_win_size - i].sn != (sn - i))/*说明新传的sn与上次传的sn(即head_sn_ch0)之间有漏包*/
+                    {
+                        if (rx_win_info_ch1[0].recv_flag == CRC_OK)
+                        {
+                            //rx_win_info_ch1[0].data_buf need save to txt  后面添加链表来管理要存txt的数据
+                        }
+                        for (j = 0; j < g_win_size - i; j++)
+                        {
+                            rx_win_info_ch1[j].sn = rx_win_info_ch1[j + 1].sn;
+                            rx_win_info_ch1[j].recv_flag = rx_win_info_ch1[j + 1].recv_flag;
+                            for (k = 0; k < PACKET_SIZE / 2; k++)
+                            {
+                                rx_win_info_ch1[j].data_buf[k] = rx_win_info_ch1[j + 1].data_buf[k];
+                            }
+                        }
+                        /*将漏的数据包填0，在接收窗先占上位置*/
+                        rx_win_info_ch1[g_win_size - i].sn = head_sn_ch1 + i;
+                        rx_win_info_ch1[g_win_size - i].recv_flag = CRC_FAIL;
+                        for (j = 0; j < PACKET_SIZE / 2; j++)
+                        {
+                            rx_win_info_ch1[g_win_size - i].data_buf[j] = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (rx_win_info_ch1[0].recv_flag == CRC_OK)
+                        {
+                            //rx_win_info_ch1[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                        }
+                        for (j = 0; j < g_win_size - 1; j++)
+                        {
+                            rx_win_info_ch1[j].sn = rx_win_info_ch1[j + 1].sn;
+                            rx_win_info_ch1[j].recv_flag = rx_win_info_ch1[j + 1].recv_flag;
+                            for (k = 0; k < PACKET_SIZE / 2; k++)
+                            {
+                                rx_win_info_ch1[j].data_buf[k] = rx_win_info_ch1[j + 1].data_buf[k];
+                            }
+                        }
+                        /*将新传的数据加到窗头*/
+                        head_sn_ch0 = sn;
+                        rx_win_info_ch1[g_win_size - 1].sn = sn;
+                        rx_win_info_ch1[g_win_size - 1].recv_flag = CRC_OK;
+                        for (j = 0; j < PACKET_SIZE / 2; j++)
+                        {
+                            rx_win_info_ch1[g_win_size - 1].data_buf[j] = (pdata[3 + j] & 0xFF) | ((pdata[4 + j] << 8) & (0xFF00));
+                        }
+                        break;
+                    }
+                }
+            }
+            else if (((sn - head_sn_ch1) >= -127) &&((sn - head_sn_ch1) <= -127 + g_win_size))/*说明也是新传的数据，只是sn循环了*/
+            {
+                for(i = 1; i < g_win_size; i++)
+                {
+                    if (rx_win_info_ch1[g_win_size - i].sn != (sn - 1 + 128) % 128)/*说明新传的sn与上次传的sn(即head_sn_ch0)之间有漏包*/
+                    {
+                        if (rx_win_info_ch1[0].recv_flag == CRC_OK)
+                        {
+                            //rx_win_info_ch1[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                        }
+                        for (j = 0; j < g_win_size - i; j++)
+                        {
+                            rx_win_info_ch1[j].sn = rx_win_info_ch1[j + 1].sn;
+                            rx_win_info_ch1[j].recv_flag = rx_win_info_ch1[j + 1].recv_flag;
+                            for (k = 0; k < PACKET_SIZE / 2; k++)
+                            {
+                                rx_win_info_ch1[j].data_buf[k] = rx_win_info_ch1[j + 1].data_buf[k];
+                            }
+                        }
+                        /*将漏的数据包填0，在接收窗先占上位置*/
+                        rx_win_info_ch1[g_win_size - i].sn = (head_sn_ch1 + i) % 128;
+                        rx_win_info_ch1[g_win_size - i].recv_flag = CRC_FAIL;
+                        for (j = 0; j < PACKET_SIZE / 2; j++)
+                        {
+                            rx_win_info_ch1[g_win_size - i].data_buf[j] = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (rx_win_info_ch1[0].recv_flag == CRC_OK)
+                        {
+                            //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                        }
+                        for (j = 0; j < g_win_size - 1; j++)
+                        {
+                            rx_win_info_ch1[j].sn = rx_win_info_ch1[j + 1].sn;
+                            rx_win_info_ch1[j].recv_flag = rx_win_info_ch1[j + 1].recv_flag;
+                            for (k = 0; k < PACKET_SIZE / 2; k++)
+                            {
+                                rx_win_info_ch1[j].data_buf[k] = rx_win_info_ch1[j + 1].data_buf[k];
+                            }
+                        }
+                        /*将新传的数据加到窗头*/
+                        head_sn_ch1 = sn;
+                        rx_win_info_ch1[g_win_size - 1].sn = sn;
+                        rx_win_info_ch1[g_win_size - 1].recv_flag = CRC_OK;
+                        for (j = 0; j < PACKET_SIZE / 2; j++)
+                        {
+                            rx_win_info_ch1[g_win_size - 1].data_buf[j] = (pdata[3 + j] & 0xFF) | ((pdata[4 + j] << 8) & (0xFF00));
+                        }
+                        break;
+                    }
+                }
+            }
+            else/*说明是重传的数据，找到窗中的对应的sn，填写数据*/
+            {
+                for(i = g_win_size - 1; i >= 0; i--)
+                {
+                    if (rx_win_info_ch1[i].sn == sn)
+                    {
+                        for (j = 0; j < PACKET_SIZE / 2; j++)
+                        {
+                            rx_win_info_ch1[i].data_buf[j] = (pdata[3 + j] & 0xFF) | ((pdata[4 + j] << 8) & (0xFF00));
+                        }
+                        rx_win_info_ch1[i].recv_flag = CRC_OK;
+                    }
+                    break;
+                }
+            }
+        }
     }
 }

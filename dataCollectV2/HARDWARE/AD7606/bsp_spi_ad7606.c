@@ -18,8 +18,8 @@
 #include "am.h"
 
 FIFO_T	g_tAD;	/* 定义一个交换缓冲区，用于存储AD采集数据，并用于写入SD卡 */
-FIFO_CH1_T g_fifo_ch0;
-FIFO_CH2_T g_fifo_ch1;
+FIFO_CH0_T g_fifo_ch0;
+FIFO_CH1_T g_fifo_ch1;
 
 
 void bsp_TIM4_Configuration(void);

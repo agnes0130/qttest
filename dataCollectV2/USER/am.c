@@ -71,7 +71,7 @@ void datacopy(uint8_t *send_data, uint16_t* FIFO, uint8_t packet_size)
 
 /*计算发送窗口长度，意义为允许最大时延条件下，对应的发送窗口的长度，
 在最大时延范围内，都有机会让下位机重发 packet_size 为每个数据包的有效字节数，
-sampling_rate为AD的采样频率。             若使用am重传，tx_window_size 需在初始化时调用*/
+sampling_rate为AD的采样频率。             若使用am重传，tx_window_init 需在初始化时调用*/
 void tx_window_init(uint8_t packet_size, uint16_t sampling_rate)
 {
 	g_win_size = MAX_DELAY/(packet_size /(2 * sampling_rate));

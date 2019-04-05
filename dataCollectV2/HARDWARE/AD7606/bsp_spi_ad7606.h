@@ -108,14 +108,14 @@ typedef struct
 	uint16_t write_ptr;
 	uint16_t fifo_cnt;
 	uint16_t data_buf[FIFO_SIZE];
-}FIFO_CH1_T;
+}FIFO_CH0_T;
 
 typedef struct
 {
 	uint16_t write_ptr;
 	uint16_t fifo_cnt;
 	uint16_t data_buf[FIFO_SIZE];
-}FIFO_CH2_T;
+}FIFO_CH1_T;
 
 /* 供外部调用的函数声明 */
 void ad7606_Reset(void);
@@ -128,8 +128,8 @@ uint8_t GetAdcFormFifo(uint16_t *_usReadAdc);
 
 extern FIFO_T  g_tAD;
 
-extern FIFO_CH1_T g_fifo_ch0;
-extern FIFO_CH2_T g_fifo_ch1;
+extern FIFO_CH0_T g_fifo_ch0;
+extern FIFO_CH1_T g_fifo_ch1;
 
 
 #endif

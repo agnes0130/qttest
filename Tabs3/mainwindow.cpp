@@ -416,8 +416,8 @@ void MainWindow::readCom()
     //qDebug()<<byteArray<<endl;
     byteArray.clear();
 #else
-    unsigned char pdata[PACKET_SIZE + 4];
-    unsigned char pdata_out[ACK_DATA_SIZE + 2];
+    uint8_t pdata[PACKET_SIZE + 4];
+    uint8_t pdata_out[ACK_DATA_SIZE + 2];
     int data_is_ok;
     int is_re_tx_flag = 0;
     byteArray.append(serialPort->readAll());
@@ -432,7 +432,8 @@ void MainWindow::readCom()
 
     if (data_is_ok == CRC_OK)
     {
-        //TODO save data
+        //TODO update rx window and save data
+        am_obj->update_rx_window_and_save_data(&pdata[0]);
         if (is_re_tx_flag == 0)
         {
             //PLOT

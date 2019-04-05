@@ -5,6 +5,7 @@
 
 //宏定义和STM32保持一致
 //#define AM_RE_TX_ENABLE 暂时关掉
+#define MAX_DELAY       3//允许的上下行最大时延
 #define PACKET_SIZE     32
 #define CRC_INIT        0x77
 #define CH_0            0
@@ -16,13 +17,15 @@
 #define NACK            0
 #define ACK_DATA_SIZE   4
 
+#define FIFO_SIZE       64//允许的最大的PACKET_SIZE为64
+
 class am : public QObject
 {
     Q_OBJECT
 public:
     explicit am(QObject *parent = 0);
 
-const unsigned char crc8_table[256] =
+const uint8_t crc8_table[256] =
 {
   0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65,
   157, 195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220,
@@ -41,11 +44,26 @@ const unsigned char crc8_table[256] =
   233, 183, 85, 11, 136, 214, 52, 106, 43, 117, 151, 201, 74, 20, 246, 168,
   116, 42, 200, 150, 21, 75, 169, 247, 182, 232, 10, 84, 215, 137, 107, 53
 };
+uint16_t    g_win_size;
+uint8_t     head_sn_ch0;
+uint8_t     head_sn_ch1;
 
-bool crc8_verify(unsigned char *pdata, int len, unsigned char init_crc);
-unsigned char crc8_calcluate(unsigned char *pdata, int len, unsigned char init_rc);
+typedef struct
+{
+   uint8_t sn;
+   uint8_t recv_flag;
+   uint16_t data_buf[FIFO_SIZE];
+}RX_WINDOW_T;
 
-void am_check_data(unsigned char* pdata, unsigned char* pdata_out, int* data_ok, int* is_re_tx_flag);
+RX_WINDOW_T *rx_win_info_ch0;
+RX_WINDOW_T *rx_win_info_ch1;
+
+void rx_window_init(uint8_t packet_size, uint16_t sampling_rate);
+bool crc8_verify(uint8_t *pdata, int len, uint8_t init_crc);
+uint8_t crc8_calcluate(uint8_t *pdata, int len, uint8_t init_rc);
+
+void am_check_data(uint8_t* pdata, uint8_t* pdata_out, int* data_ok, int* is_re_tx_flag);
+void update_rx_window_and_save_data(uint8_t* pdata);
 
 signals:
 
