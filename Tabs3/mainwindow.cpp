@@ -432,11 +432,15 @@ void MainWindow::readCom()
 
     if (data_is_ok == CRC_OK)
     {
-        //TODO update rx window and save data
-        am_obj->update_rx_window_and_save_data(&pdata[0]);
+        //update rx window and save data
+        DATA_T0_SAVE_T *head = NULL;
+        am_obj->update_rx_window_and_save_data(&pdata[0], PACKET_SIZE, head);
+        save_data_to_txt(head);
+        am_obj->delete_node_mem_after_save_data(head);
+
         if (is_re_tx_flag == 0)
         {
-            //PLOT
+            // TODO PLOT
         }
     }
     else
@@ -487,4 +491,24 @@ void MainWindow::dataPlot2(double hereData)
     plot2->graph(0)->setData(timeDataVec,disDataVec);
     plot2->rescaleAxes(true);
     plot2->replot();
+}
+
+void MainWindow::save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size)
+{
+    uint8_t i;
+    int16_t s16_data;
+    float float_real_data;
+    DATA_T0_SAVE_T *pnode;
+    while(head->next != NULL)
+    {
+        pnode = head->next;
+        for (i = 0; i < packet_size / 2; i++)
+        {
+            s16_data = pnode->data[i];
+            float_real_data = (s16_data / 32768) * 10 /** ()*/;
+
+
+        }
+        head = pnode;
+    }
 }

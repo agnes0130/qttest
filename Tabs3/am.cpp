@@ -74,12 +74,15 @@ void am::am_check_data(uint8_t* pdata, uint8_t* pdata_out, int* data_ok, int* is
     }
 }
 
-void am::update_rx_window_and_save_data(uint8_t* pdata)
+void am::update_rx_window_and_save_data(uint8_t* pdata, uint8_t packet_size, DATA_T0_SAVE_T *head)
 {
     uint8_t ch_idx, sn, i, j, k;
 
     ch_idx = pdata[1];
     sn = (pdata[2] >> 1) & 0x7F;
+    DATA_T0_SAVE_T *pnode, *end;
+    head = new DATA_T0_SAVE_T[1];
+    end = head;
     if (ch_idx == CH_0)
     {
         if ((sn > head_sn_ch0) && (sn - head_sn_ch0 < g_win_size))/*说明是新传的数据，移动接收窗*/
@@ -90,7 +93,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                 {
                     if (rx_win_info_ch0[0].recv_flag == CRC_OK)
                     {
-                        //rx_win_info_ch0[0].data_buf need save to txt  后面添加链表来管理要存txt的数据
+                        //rx_win_info_ch0[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                        pnode = new  DATA_T0_SAVE_T[1];
+                        for (j = 0; j < packet_size / 2; j++)
+                        {
+                            pnode->data[j] = rx_win_info_ch0[0].data_buf[j];
+                        }
+                        end->next = pnode;
+                        end = pnode;
                     }
                     for (j = 0; j < g_win_size - i; j++)
                     {
@@ -113,7 +123,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                 {
                     if (rx_win_info_ch0[0].recv_flag == CRC_OK)
                     {
-                        //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                        //rx_win_info_ch0[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                        pnode = new  DATA_T0_SAVE_T[1];
+                        for (j = 0; j < packet_size / 2; j++)
+                        {
+                            pnode->data[j] = rx_win_info_ch0[0].data_buf[j];
+                        }
+                        end->next = pnode;
+                        end = pnode;
                     }
                     for (j = 0; j < g_win_size - 1; j++)
                     {
@@ -144,7 +161,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                 {
                     if (rx_win_info_ch0[0].recv_flag == CRC_OK)
                     {
-                        //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                        //rx_win_info_ch0[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                        pnode = new  DATA_T0_SAVE_T[1];
+                        for (j = 0; j < packet_size / 2; j++)
+                        {
+                            pnode->data[j] = rx_win_info_ch0[0].data_buf[j];
+                        }
+                        end->next = pnode;
+                        end = pnode;
                     }
                     for (j = 0; j < g_win_size - i; j++)
                     {
@@ -167,7 +191,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                 {
                     if (rx_win_info_ch0[0].recv_flag == CRC_OK)
                     {
-                        //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                        //rx_win_info_ch0[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                        pnode = new  DATA_T0_SAVE_T[1];
+                        for (j = 0; j < packet_size / 2; j++)
+                        {
+                            pnode->data[j] = rx_win_info_ch0[0].data_buf[j];
+                        }
+                        end->next = pnode;
+                        end = pnode;
                     }
                     for (j = 0; j < g_win_size - 1; j++)
                     {
@@ -217,7 +248,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                     {
                         if (rx_win_info_ch1[0].recv_flag == CRC_OK)
                         {
-                            //rx_win_info_ch1[0].data_buf need save to txt  后面添加链表来管理要存txt的数据
+                            //rx_win_info_ch1[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                            pnode = new  DATA_T0_SAVE_T[1];
+                            for (j = 0; j < packet_size / 2; j++)
+                            {
+                                pnode->data[j] = rx_win_info_ch1[0].data_buf[j];
+                            }
+                            end->next = pnode;
+                            end = pnode;
                         }
                         for (j = 0; j < g_win_size - i; j++)
                         {
@@ -240,7 +278,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                     {
                         if (rx_win_info_ch1[0].recv_flag == CRC_OK)
                         {
-                            //rx_win_info_ch1[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                            //rx_win_info_ch1[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                            pnode = new  DATA_T0_SAVE_T[1];
+                            for (j = 0; j < packet_size / 2; j++)
+                            {
+                                pnode->data[j] = rx_win_info_ch1[0].data_buf[j];
+                            }
+                            end->next = pnode;
+                            end = pnode;
                         }
                         for (j = 0; j < g_win_size - 1; j++)
                         {
@@ -271,7 +316,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                     {
                         if (rx_win_info_ch1[0].recv_flag == CRC_OK)
                         {
-                            //rx_win_info_ch1[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                            //rx_win_info_ch1[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                            pnode = new  DATA_T0_SAVE_T[1];
+                            for (j = 0; j < packet_size / 2; j++)
+                            {
+                                pnode->data[j] = rx_win_info_ch1[0].data_buf[j];
+                            }
+                            end->next = pnode;
+                            end = pnode;
                         }
                         for (j = 0; j < g_win_size - i; j++)
                         {
@@ -294,7 +346,14 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                     {
                         if (rx_win_info_ch1[0].recv_flag == CRC_OK)
                         {
-                            //rx_win_info_ch0[0].data_buf need save to txt 后面添加链表来管理要存txt的数据
+                            //rx_win_info_ch1[0].data_buf need save to txt  添加到链表来管理要存txt的数据
+                            pnode = new  DATA_T0_SAVE_T[1];
+                            for (j = 0; j < packet_size / 2; j++)
+                            {
+                                pnode->data[j] = rx_win_info_ch1[0].data_buf[j];
+                            }
+                            end->next = pnode;
+                            end = pnode;
                         }
                         for (j = 0; j < g_win_size - 1; j++)
                         {
@@ -333,5 +392,16 @@ void am::update_rx_window_and_save_data(uint8_t* pdata)
                 }
             }
         }
+    }
+}
+
+void am::delete_node_mem_after_save_data(DATA_T0_SAVE_T *head)
+{
+    DATA_T0_SAVE_T * temp;
+    while (head != NULL)
+    {
+        temp = head->next;
+        delete [] head;
+        head = temp;
     }
 }

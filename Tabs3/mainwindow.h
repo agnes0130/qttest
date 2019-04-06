@@ -49,6 +49,12 @@ public:
     QVector<int> pressSave;
     QVector<double> disSave;
     QVector<double> timeSave;
+    typedef struct saveData
+    {
+        uint16_t data[FIFO_SIZE];
+        saveData* next;
+    }DATA_T0_SAVE_T;
+    void save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size);
 private slots:
     void on_comboSize_currentIndexChanged(int index);
     void on_pushButton_clicked();

@@ -58,13 +58,19 @@ typedef struct
 RX_WINDOW_T *rx_win_info_ch0;
 RX_WINDOW_T *rx_win_info_ch1;
 
+typedef struct saveData
+{
+    uint16_t data[FIFO_SIZE];
+    saveData* next;
+}DATA_T0_SAVE_T;
+
 void rx_window_init(uint8_t packet_size, uint16_t sampling_rate);
 bool crc8_verify(uint8_t *pdata, int len, uint8_t init_crc);
 uint8_t crc8_calcluate(uint8_t *pdata, int len, uint8_t init_rc);
 
 void am_check_data(uint8_t* pdata, uint8_t* pdata_out, int* data_ok, int* is_re_tx_flag);
-void update_rx_window_and_save_data(uint8_t* pdata);
-
+void update_rx_window_and_save_data(uint8_t* pdata, uint8_t packet_size, DATA_T0_SAVE_T *head);
+void delete_node_mem_after_save_data(DATA_T0_SAVE_T *head);
 signals:
 
 public slots:
