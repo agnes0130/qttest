@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     init();
+    am_obj = new am(this);
     setWindowTitle(tr("电缆压接实验记录与分析软件"));//设置标题
     ui->tabWidget->setTabPosition(QTabWidget::North);//设置选项卡的方位东南西北，默认在上方
     ui->tabWidget->setTabShape(QTabWidget::Triangular);//设置选项卡的形状
@@ -353,6 +354,7 @@ void MainWindow::on_startButton_clicked()
 }
 void MainWindow::readCom()
 {
+#ifndef AM_RE_TX_ENABLE
     byteArray.append(serialPort->readAll());
 
     int index = 0;
@@ -420,6 +422,40 @@ void MainWindow::readCom()
     }
     //qDebug()<<byteArray<<endl;
     byteArray.clear();
+#else
+    uint8_t pdata[PACKET_SIZE + 4];
+    uint8_t pdata_out[ACK_DATA_SIZE + 2];
+    int data_is_ok;
+    int is_re_tx_flag = 0;
+    byteArray.append(serialPort->readAll());
+    int i = 0;
+    int arraySize = byteArray.size();
+    if ((byteArray[i] == 0xFF) && ())
+    {
+        //TODO read the data packet from stm32 to fill pdata and send to am
+    }
+    am_obj->am_check_data(&pdata[0], &pdata_out[0], &data_is_ok, &is_re_tx_flag);
+    //TODO send pdata_out to stm32
+
+    if (data_is_ok == CRC_OK)
+    {
+        //update rx window and save data
+        DATA_T0_SAVE_T *head = NULL;
+        am_obj->update_rx_window_and_save_data(&pdata[0], PACKET_SIZE, head);
+        save_data_to_txt(head);
+        am_obj->delete_node_mem_after_save_data(head);
+
+        if (is_re_tx_flag == 0)
+        {
+            // TODO PLOT
+        }
+    }
+    else
+    {
+        //do nothing
+    }
+
+#endif
 }
 void MainWindow::dataPlot(int hereData)
 {
@@ -495,4 +531,22 @@ void MainWindow::dataPlot3()
     plot3->graph(0)->setData(posDataVec1,disDataVec);
     plot3->rescaleAxes(true);
     plot->replot();
+void MainWindow::save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size)
+{
+    uint8_t i;
+    int16_t s16_data;
+    float float_real_data;
+    DATA_T0_SAVE_T *pnode;
+    while(head->next != NULL)
+    {
+        pnode = head->next;
+        for (i = 0; i < packet_size / 2; i++)
+        {
+            s16_data = pnode->data[i];
+            float_real_data = (s16_data / 32768) * 10 /** ()*/;
+
+
+        }
+        head = pnode;
+    }
 }

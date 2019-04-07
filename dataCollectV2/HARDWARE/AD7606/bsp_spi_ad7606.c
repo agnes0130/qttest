@@ -15,27 +15,12 @@
 //#include "bsp.h"
 #include "bsp_spi_ad7606.h"
 //#include "bsp_timer.h"
+#include "am.h"
 
 FIFO_T	g_tAD;	/* 定义一个交换缓冲区，用于存储AD采集数据，并用于写入SD卡 */
-const uint8_t crc8_table[256] =
-    {
-      0, 94, 188, 226, 97, 63, 221, 131, 194, 156, 126, 32, 163, 253, 31, 65,
-      157, 195, 33, 127, 252, 162, 64, 30, 95, 1, 227, 189, 62, 96, 130, 220,
-      35, 125, 159, 193, 66, 28, 254, 160, 225, 191, 93, 3, 128, 222, 60, 98,
-      190, 224, 2, 92, 223, 129, 99, 61, 124, 34, 192, 158, 29, 67, 161, 255,
-      70, 24, 250, 164, 39, 121, 155, 197, 132, 218, 56, 102, 229, 187, 89, 7,
-      219, 133, 103, 57, 186, 228, 6, 88, 25, 71, 165, 251, 120, 38, 196, 154,
-      101, 59, 217, 135, 4, 90, 184, 230, 167, 249, 27, 69, 198, 152, 122, 36,
-      248, 166, 68, 26, 153, 199, 37, 123, 58, 100, 134, 216, 91, 5, 231, 185,
-      140, 210, 48, 110, 237, 179, 81, 15, 78, 16, 242, 172, 47, 113, 147, 205,
-      17, 79, 173, 243, 112, 46, 204, 146, 211, 141, 111, 49, 178, 236, 14, 80,
-      175, 241, 19, 77, 206, 144, 114, 44, 109, 51, 209, 143, 12, 82, 176, 238,
-      50, 108, 142, 208, 83, 13, 239, 177, 240, 174, 76, 18, 145, 207, 45, 115,
-      202, 148, 118, 40, 171, 245, 23, 73, 8, 86, 180, 234, 105, 55, 213, 139,
-      87, 9, 235, 181, 54, 104, 138, 212, 149, 203, 41, 119, 244, 170, 72, 22,
-      233, 183, 85, 11, 136, 214, 52, 106, 43, 117, 151, 201, 74, 20, 246, 168,
-      116, 42, 200, 150, 21, 75, 169, 247, 182, 232, 10, 84, 215, 137, 107, 53
-    };
+FIFO_CH0_T g_fifo_ch0;
+FIFO_CH1_T g_fifo_ch1;
+
 
 void bsp_TIM4_Configuration(void);
 
@@ -402,12 +387,43 @@ void ad7606_IRQSrc(void)
 	AD_CS_LOW();
 	for (i = 0; i < CH_NUM; i++)
 	{
+#ifndef AM_RE_TX_ENABLE//暂时不改原有的代码，使用宏开关
 		usReadValue = ad7606_ReadBytes();	
 		if (g_tAD.usWrite < FIFO_SIZE)
 		{
 			g_tAD.usBuf[g_tAD.usWrite] = usReadValue;
 			++g_tAD.usWrite;
 		}
+#else
+		usReadValue = ad7606_ReadBytes();
+		if (i == 0)// ch0
+		{
+			g_fifo_ch0.data_buf[g_fifo_ch0.write_ptr % FIFO_SIZE] = usReadValue;
+			if((g_fifo_ch0.fifo_cnt * FIFO_SIZE + g_fifo_ch0.write_ptr + 1) % (PACKET_SIZE /2) == 0)//已经采集够PACKET_SIZE个字节的数据了
+			{
+				am_send(&g_fifo_ch0.data_buf[0], FIFO_SIZE, g_fifo_ch0.write_ptr, PACKET_SIZE, i);
+			}
+			g_fifo_ch0.write_ptr ++;
+			if (g_fifo_ch0.write_ptr % FIFO_SIZE == 0)//FIFO要循环了
+			{
+				g_fifo_ch0.fifo_cnt++;
+			}
+		}
+		else if (i == 1)// ch1
+		{
+			g_fifo_ch1.data_buf[g_fifo_ch1.write_ptr % FIFO_SIZE] = usReadValue;
+			if((g_fifo_ch1.fifo_cnt * FIFO_SIZE + g_fifo_ch1.write_ptr + 1) % (PACKET_SIZE /2) == 0)//已经采集够PACKET_SIZE个字节的数据了
+			{
+				am_send(&g_fifo_ch1.data_buf[0], FIFO_SIZE, g_fifo_ch1.write_ptr, PACKET_SIZE, i);
+			}
+			g_fifo_ch1.write_ptr ++;
+			if (g_fifo_ch1.write_ptr % FIFO_SIZE == 0)//FIFO要循环了
+			{
+				g_fifo_ch1.fifo_cnt++;
+			}
+		}
+		//am 现在只支持两路
+#endif
 	}		
 	
 	AD_CS_HIGH();
@@ -463,6 +479,11 @@ void ad7606_StartRecord(uint32_t _ulFreq)
 	g_tAD.usRead = 0;				/* 必须在开启TIM2之前清0 */
 	g_tAD.usWrite = 0;
 
+	g_fifo_ch0.write_ptr = 0;
+	g_fifo_ch1.write_ptr = 0;
+	g_fifo_ch0.fifo_cnt = 0;
+	g_fifo_ch1.fifo_cnt = 0;
+
 	bsp_TIM4_Configuration();		/* 配置TIM2定时中断 */		
 
 	bsp_SET_TIM4_FREQ(_ulFreq);		/* 设置采样频率, 并使能TIM2定时采样中断 */
@@ -487,14 +508,3 @@ void TIM4_IRQHandler(void)
 	ad7606_IRQSrc();
 }
 
-uint8_t crc8_calcluate(uint8_t *pdata, int len, uint8_t init_crc)
-{
-		uint8_t byte = 0;
-    while(len--)
-    {
-        byte = init_crc ^ (*pdata);
-        init_crc = crc8_table[byte];
-        pdata ++;
-    }
-    return init_crc;
-}

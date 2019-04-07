@@ -1,5 +1,8 @@
 #include "sys.h"
 #include "usart.h"
+#include "bsp_spi_ad7606.h"
+#include "am.h"
+
 
 //V1.3修改说明 
 //支持适应不同频率下的串口波特率设置.
@@ -105,29 +108,64 @@ void uart_init(u32 bound){
 }
 
 void USART1_IRQHandler(void)                	//串口1中断服务程序
-	{
+{
+#ifndef AM_RE_TX_ENABLE
 	u8 Res;
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //接收中断(接收到的数据必须是0x0d 0x0a结尾)
-		{
+	{
 		Res =USART_ReceiveData(USART1);//(USART1->DR);	//读取接收到的数据
 		
 		if((USART_RX_STA&0x80)==0)//接收未完成
-			{
+		{
 			if(USART_RX_STA&0x40)//接收到了0x0d
-				{
+			{
 				if(Res!=0x0a)USART_RX_STA=0;//接收错误,重新开始
 				else USART_RX_STA|=0x80;	//接收完成了 
-				}
+			}
 			else //还没收到0X0D
-				{	
+			{	
 				if(Res==0x0d)USART_RX_STA|=0x40;
 				else
-					{
+				{
 					USART_RX_BUF[USART_RX_STA&0X3F]=Res ;
 					USART_RX_STA++;
 					if(USART_RX_STA>63)USART_RX_STA=0;//接收数据错误,重新开始接收	  
-					}		 
-				}
-			}   		 
+				}		 
+			}
+		}   		 
      } 
+#else
+	uint8_t recv_data = 0;
+	uint8_t recv_data_a = 0;//recv_data   前面的数据
+	uint8_t recv_data_b = 0;//recv_data_a 前面的数据
+	uint8_t data[ACK_DATA_SIZE];
+	bool valid_data_flag = FALSE;
+	uint8_t i;
+ 	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //接收中断
+	{
+		recv_data = USART_ReceiveData(USART1);
+		//这里只写了接收ACK/NACK的实现 以0xFF 0xFF 0xFF开头为标识        [前提是PC不会连发3个0xFF]
+		if (((recv_data == 0xFF) && (recv_data_a == 0xFF) && (recv_data_b == 0xFF)))
+		{
+			valid_data_flag = TRUE;
+			i = ACK_DATA_SIZE;
+		}
+
+		if (valid_data_flag == TRUE)
+		{
+			if (i > 0)
+			{
+				data[ACK_DATA_SIZE - i] = recv_data;
+			}
+			else
+			{
+				valid_data_flag = FALSE;
+				ack_nack_recv_from_pc(&g_fifo_ch0.data_buf[0], &g_fifo_ch1.data_buf[0], FIFO_SIZE, FIFO_SIZE, PACKET_SIZE, &data[0]);
+			}
+			i--;
+		}
+		recv_data_a = recv_data;
+		recv_data_b = recv_data_a;
+	}
+#endif
 } 

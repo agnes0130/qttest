@@ -20,7 +20,7 @@
 
 /* 每个样本2字节，采集通道 */
 #define CH_NUM			8				/* 采集2通道 */
-#define FIFO_SIZE		1*1024*2		/* 大小不要超过48K (CPU内部RAM 只有64K) */
+#define FIFO_SIZE		100//1*1024*2		/* 大小不要超过48K (CPU内部RAM 只有64K) */
 
 /* 定义AD7606的SPI GPIO */
 
@@ -89,8 +89,10 @@
 #define AD_CSK_HIGH()				AD_SPI_SCK_GPIO_PORT->BSRR = AD_SPI_SCK_PIN
 
 #define AD_MISO_IN					PCin(9)
+#define PACKET_SIZE					32
+//#define AM_RE_TX_ENABLE  			//暂时关掉  ，使用AM时打开
 
-#define CRC_INIT						0x77
+
 
 /* AD数据采集缓冲区 */
 typedef struct
@@ -101,6 +103,20 @@ typedef struct
 	uint16_t usBuf[FIFO_SIZE];
 }FIFO_T;
 
+typedef struct
+{
+	uint16_t write_ptr;
+	uint16_t fifo_cnt;
+	uint16_t data_buf[FIFO_SIZE];
+}FIFO_CH0_T;
+
+typedef struct
+{
+	uint16_t write_ptr;
+	uint16_t fifo_cnt;
+	uint16_t data_buf[FIFO_SIZE];
+}FIFO_CH1_T;
+
 /* 供外部调用的函数声明 */
 void ad7606_Reset(void);
 void ad7606_SetOS(uint8_t _ucMode);
@@ -110,10 +126,11 @@ void ad7606_StartRecord(uint32_t _ulFreq);
 void ad7606_StopRecord(void);
 uint8_t GetAdcFormFifo(uint16_t *_usReadAdc);
 
-/*CRC-8*/
-uint8_t crc8_calcluate(uint8_t *pdata, int len, uint8_t init_rc);
-
 extern FIFO_T  g_tAD;
+
+extern FIFO_CH0_T g_fifo_ch0;
+extern FIFO_CH1_T g_fifo_ch1;
+
 
 #endif
 
