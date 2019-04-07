@@ -26,6 +26,11 @@ MainWindow::MainWindow(QWidget *parent) :
     plot2->xAxis->setLabel("time/s");
     plot2->yAxis->setLabel("Position/mm");
     plot2->addGraph();
+    plot3=new QCustomPlot(ui->tab);
+    plot3->setGeometry(900,10,600,500);
+    plot3->xAxis->setLabel("press/kgf");
+    plot3->yAxis->setLabel("Position/mm");
+    plot3->addGraph();
     plotAll = new QCustomPlot(ui->tab_2);
     plotAll->setGeometry(100,130,600,500);
     plotAll->xAxis->setLabel("time/s");
@@ -380,7 +385,8 @@ void MainWindow::readCom()
                         hereData = 10000*rxDataArray[0] + 1000*rxDataArray[1] + 100*rxDataArray[2] + 10*rxDataArray[3] + rxDataArray[4];
                     }
         //            char hereData='0'+17;
-                    qDebug() << hereData << endl;
+                   //
+                    //qDebug() << hereData << endl;
                     dataPlot(hereData);
                     //pressData.append(hereData);
                 }
@@ -406,8 +412,9 @@ void MainWindow::readCom()
         //            char hereData='0'+17;
                     double hereData1;
                     hereData1 = -hereData*0.006 + 65;
-                    qDebug() << hereData1 << endl;
+                    //qDebug() << hereData1 << endl;
                     dataPlot2(hereData1);
+                    dataPlot3();
                     //pressData.append(hereData);
                 }
             }
@@ -493,6 +500,11 @@ void MainWindow::dataPlot2(double hereData)
     plot2->replot();
 }
 
+void MainWindow::dataPlot3()
+{
+    plot3->graph(0)->setData(posDataVec1,disDataVec);
+    plot3->rescaleAxes(true);
+    plot->replot();
 void MainWindow::save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size)
 {
     uint8_t i;

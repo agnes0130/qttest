@@ -30,6 +30,7 @@ public:
     void init();
     QCustomPlot *plot;
     QCustomPlot *plot2;
+    QCustomPlot *plot3;
     QCustomPlot *plotAll;
     QSerialPort *serialPort;
     QByteArray byteArray;
@@ -40,6 +41,7 @@ public:
     QVector<QString> resistData;
     void dataPlot(int);
     void dataPlot2(double);
+    void dataPlot3(void);
     int plotDataNum=100;
     int intoPlotFuncNum=0;
     int startFlag = 0;
