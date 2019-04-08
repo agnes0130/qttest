@@ -51,6 +51,7 @@ MainWindow::~MainWindow()
 }
 void MainWindow::init()
 {
+    #ifdef 0
     ui->comboSize->addItem("50 mm2");
     ui->comboSize->addItem("70 mm2");
     ui->comboSize->addItem("120 mm2");
@@ -62,6 +63,7 @@ void MainWindow::init()
     ui->comboTurn->addItem(tr("由外向内"));
     ui->comboNumber->addItem("4");
     ui->comboNumber->addItem("6");
+#endif
 }
 void MainWindow::on_comboSize_currentIndexChanged(int index)
 {
