@@ -32,3 +32,7 @@
 .\bsp_spi_ad7606.o: ..\HARDWARE\AD7606\bsp_spi_ad7606.h
 .\bsp_spi_ad7606.o: ..\SYSTEM\Public\stdint.h
 .\bsp_spi_ad7606.o: ..\SYSTEM\sys\sys.h
+.\bsp_spi_ad7606.o: ..\USER\am.h
+.\bsp_spi_ad7606.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\bsp_spi_ad7606.o: ..\HARDWARE\USB\lib\usb_type.h
+.\bsp_spi_ad7606.o: ..\HARDWARE\USB\src\usb_conf.h

@@ -399,6 +399,11 @@
               <FileType>1</FileType>
               <FilePath>..\Soft\Task\task_manage.c</FilePath>
             </File>
+            <File>
+              <FileName>am.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\am.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

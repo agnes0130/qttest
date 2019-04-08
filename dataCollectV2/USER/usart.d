@@ -31,3 +31,9 @@
 .\usart.o: ..\STM32F10x_FWLib\inc\misc.h
 .\usart.o: ..\SYSTEM\usart\usart.h
 .\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\usart.o: ..\HARDWARE\AD7606\bsp_spi_ad7606.h
+.\usart.o: ..\SYSTEM\Public\stdint.h
+.\usart.o: ..\USER\am.h
+.\usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\usart.o: ..\HARDWARE\USB\lib\usb_type.h
+.\usart.o: ..\HARDWARE\USB\src\usb_conf.h
