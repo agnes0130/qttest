@@ -29,10 +29,12 @@ SOURCES += \
         mainwindow.cpp \
     qcustomplot.cpp \
     mainwindow.cpp
+    am.cpp
 
 HEADERS += \
         mainwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    am.h
 
 FORMS += \
         mainwindow.ui

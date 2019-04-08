@@ -51,7 +51,6 @@ MainWindow::~MainWindow()
 }
 void MainWindow::init()
 {
-    #ifdef 0
     ui->comboSize->addItem("50 mm2");
     ui->comboSize->addItem("70 mm2");
     ui->comboSize->addItem("120 mm2");
@@ -63,7 +62,6 @@ void MainWindow::init()
     ui->comboTurn->addItem(tr("由外向内"));
     ui->comboNumber->addItem("4");
     ui->comboNumber->addItem("6");
-#endif
 }
 void MainWindow::on_comboSize_currentIndexChanged(int index)
 {
@@ -426,25 +424,44 @@ void MainWindow::readCom()
     byteArray.clear();
 #else
     uint8_t pdata[PACKET_SIZE + 4];
+    uint8_t ch_idx;
     uint8_t pdata_out[ACK_DATA_SIZE + 2];
     int data_is_ok;
     int is_re_tx_flag = 0;
-    byteArray.append(serialPort->readAll());
-    int i = 0;
-    int arraySize = byteArray.size();
-    if ((byteArray[i] == 0xFF) && ())
+    int i = 2;
+    byteArray = serialPort->read(2);//read two bytes per time
+    if ((byteArray[0] == 0xFF) && ((byteArray[1] == CH_0) || (byteArray[1] == CH_1)))
     {
-        //TODO read the data packet from stm32 to fill pdata and send to am
+        //read the data packet from stm32 to fill pdata and send to am
+        pdata[0] = (uint8_t)byteArray[0];
+        pdata[1] = (uint8_t)byteArray[1];
+        byteArray.clear();
+        while (i < (PACKET_SIZE + 4))
+        {
+            byteArray = serialPort->read(1);//read 1 byte per time
+            pdata[i] = byteArray[0];
+            byteArray.clear();
+            i ++;
+        }
     }
-    am_obj->am_check_data(&pdata[0], &pdata_out[0], &data_is_ok, &is_re_tx_flag);
-    //TODO send pdata_out to stm32
+    else
+    {
+        byteArray.remove(0,1);
+    }
+    am_obj->am_check_data(&pdata[0], &ch_idx, &pdata_out[0], &data_is_ok, &is_re_tx_flag);
+    //send pdata_out to stm32
+    for (int j = 0; j < ACK_DATA_SIZE + 2; j++)
+    {
+        char temp = (char) pdata_out[j];
+        serialPort->write(&temp, 1);
+    }
 
     if (data_is_ok == CRC_OK)
     {
         //update rx window and save data
         DATA_T0_SAVE_T *head = NULL;
         am_obj->update_rx_window_and_save_data(&pdata[0], PACKET_SIZE, head);
-        save_data_to_txt(head);
+        save_data_to_txt(head, PACKET_SIZE, ch_idx);
         am_obj->delete_node_mem_after_save_data(head);
 
         if (is_re_tx_flag == 0)
@@ -484,32 +501,6 @@ void MainWindow::dataPlot(int hereData)
     plot->replot();
 }
 
-unsigned char MainWindow::crc8_calcluate(unsigned char *pdata, int len, unsigned char init_crc)
-{
-    unsigned char byte = 0;
-    while(len--)
-    {
-        byte = init_crc ^ (*pdata);
-        init_crc = crc8_table[byte];
-        pdata ++;
-    }
-    return init_crc;
-}
-
-BOOL MainWindow::crc8_verify(unsigned char *pdata, int len, unsigned char init_crc)
-{
-    unsigned char expected_crc  = 0;
-    expected_crc = crc8_calcluate(pdata, len - 1, init_crc);
-    if (expected_crc != pdata[len - 1])
-    {
-        return FALSE;
-    }
-    else
-    {
-        return TRUE;
-    }
-}
-
 void MainWindow::dataPlot2(double hereData)
 {
     if(intoPlotFuncNum<plotDataNum)
@@ -533,7 +524,8 @@ void MainWindow::dataPlot3()
     plot3->graph(0)->setData(posDataVec1,disDataVec);
     plot3->rescaleAxes(true);
     plot->replot();
-void MainWindow::save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size)
+}
+void MainWindow::save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size, uint8_t ch_idx)
 {
     uint8_t i;
     int16_t s16_data;
@@ -546,7 +538,14 @@ void MainWindow::save_data_to_txt(DATA_T0_SAVE_T *head, uint8_t packet_size)
         {
             s16_data = pnode->data[i];
             float_real_data = (s16_data / 32768) * 10 /** ()*/;
-
+            if (ch_idx == CH_0)
+            {
+                //save ch0 data to txt
+            }
+            else if (ch_idx == CH_1)
+            {
+                //save ch1 data to txt
+            }
 
         }
         head = pnode;
